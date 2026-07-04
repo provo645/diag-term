@@ -317,6 +317,22 @@ dl.detail[hidden] { display: none; }  /* override grid so [hidden] collapses it 
 dl.detail dt { color: var(--ink-3); font-weight: 600; }
 dl.detail dd { margin: 0; color: var(--ink); word-break: break-word; }
 
+/* ---------- pager ---------- */
+.pager {
+  max-width: var(--maxw); margin: 0 auto; padding: 4px 20px 40px;
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+}
+.pager:empty { padding: 0; }
+.pg-btn {
+  font: inherit; font-size: 14px; font-weight: 600;
+  color: var(--brand-ink); background: var(--surface);
+  border: 1.5px solid var(--line-2); border-radius: 999px;
+  padding: 9px 18px; cursor: pointer; transition: all .12s;
+}
+.pg-btn:hover:not(:disabled) { border-color: var(--brand-600); background: var(--brand-50); }
+.pg-btn:disabled { opacity: .4; cursor: default; }
+.pg-info { font-size: 13.5px; color: var(--ink-2); font-weight: 600; min-width: 96px; text-align: center; }
+
 /* ---------- footer ---------- */
 footer.site-footer {
   border-top: 1px solid var(--line);
@@ -396,6 +412,7 @@ footer.site-footer b { color: var(--ink-2); }
 </section>
 
 <main class="results" id="results"></main>
+<nav class="pager" id="pager" aria-label="페이지 이동"></nav>
 
 <footer class="site-footer">
   <div class="wrap">
@@ -416,6 +433,8 @@ footer.site-footer b { color: var(--ink-2); }
 
   var DATA = [];
   var els = {};
+  var PAGE = 0;                 // current 0-based page
+  var PAGE_SIZE = 60;          // results per page
   function $(id) { return document.getElementById(id); }
   function lc(s) { return (s || "").toString().toLowerCase(); }
 
@@ -644,9 +663,6 @@ footer.site-footer b { color: var(--ink-2); }
     }
 
     var total = rows.length;
-    var limit = tokens.length ? 120 : 60;
-    rows = rows.slice(0, limit);
-
     var main = els.results;
     main.innerHTML = "";
 
@@ -658,6 +674,7 @@ footer.site-footer b { color: var(--ink-2); }
           "<div>영문 진단명·증상·소견·약어·synonym으로 검색하세요. 전체 " + DATA.length + "개 용어.</div>" +
         "</div>";
       els.count.textContent = "전체 " + DATA.length + "개";
+      els.pager.innerHTML = "";
       return;
     }
 
@@ -666,16 +683,41 @@ footer.site-footer b { color: var(--ink-2); }
         '<div class="state"><div class="big">일치하는 용어가 없습니다</div>' +
         "<div>철자, 약어, synonym 또는 더 넓은 상위 용어로 다시 검색해 보세요.</div></div>";
       els.count.textContent = "결과 0건";
+      els.pager.innerHTML = "";
       return;
     }
 
+    var pages = Math.ceil(total / PAGE_SIZE);
+    if (PAGE >= pages) PAGE = pages - 1;
+    if (PAGE < 0) PAGE = 0;
+    var start = PAGE * PAGE_SIZE;
+    var pageRows = rows.slice(start, start + PAGE_SIZE);
+
     var frag = document.createDocumentFragment();
-    for (var j = 0; j < rows.length; j++) frag.appendChild(card(rows[j][1], tokens));
+    for (var j = 0; j < pageRows.length; j++) frag.appendChild(card(pageRows[j][1], tokens));
     main.appendChild(frag);
 
     els.count.textContent =
-      "결과 " + total + "건" + (total > rows.length ? " (상위 " + rows.length + "건 표시)" : "") +
+      "결과 " + total + "건 · " + (start + 1) + "–" + (start + pageRows.length) + "번" +
+      (pages > 1 ? " (" + (PAGE + 1) + "/" + pages + " 페이지)" : "") +
       (!includeInactive ? " · 비활성 제외" : "");
+
+    renderPager(pages);
+  }
+
+  function renderPager(pages) {
+    if (pages <= 1) { els.pager.innerHTML = ""; return; }
+    els.pager.innerHTML =
+      '<button class="pg-btn" data-pg="prev"' + (PAGE <= 0 ? " disabled" : "") + ">← 이전</button>" +
+      '<span class="pg-info">' + (PAGE + 1) + " / " + pages + " 페이지</span>" +
+      '<button class="pg-btn" data-pg="next"' + (PAGE >= pages - 1 ? " disabled" : "") + ">다음 →</button>";
+  }
+
+  function gotoPage(delta) {
+    PAGE += delta;
+    render();
+    var y = els.toolbar.getBoundingClientRect().top + window.scrollY - 4;
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
   }
 
   // ---------- quick chips ----------
@@ -693,6 +735,7 @@ footer.site-footer b { color: var(--ink-2); }
       var sys = b.getAttribute("data-system");
       var active = b.classList.contains("active");
       els.system.value = active ? "" : sys;
+      PAGE = 0;
       syncChips();
       render();
       if (!active) {
@@ -716,7 +759,7 @@ footer.site-footer b { color: var(--ink-2); }
     els.includeInactive = $("includeInactive"); els.exact = $("exactMode");
     els.results = $("results"); els.count = $("count");
     els.quick = $("quick"); els.toolbar = $("toolbar");
-    els.searchbox = $("searchbox");
+    els.searchbox = $("searchbox"); els.pager = $("pager");
 
     var systems = {}, types = {};
     DATA.forEach(function (r) {
@@ -730,14 +773,20 @@ footer.site-footer b { color: var(--ink-2); }
     var t = null;
     els.q.addEventListener("input", function () {
       els.searchbox.classList.toggle("has-text", !!els.q.value);
+      PAGE = 0;                                   // new query -> back to page 1
       clearTimeout(t); t = setTimeout(render, 90);
     });
     els.clear.addEventListener("click", function () {
       els.q.value = ""; els.searchbox.classList.remove("has-text");
-      els.q.focus(); render();
+      PAGE = 0; els.q.focus(); render();
     });
     [els.system, els.type, els.warn, els.includeInactive, els.exact].forEach(function (el) {
-      el.addEventListener("change", function () { syncChips(); render(); });
+      el.addEventListener("change", function () { PAGE = 0; syncChips(); render(); });
+    });
+    els.pager.addEventListener("click", function (e) {
+      var b = e.target.closest(".pg-btn");
+      if (!b || b.disabled) return;
+      gotoPage(b.getAttribute("data-pg") === "next" ? 1 : -1);
     });
 
     render();
