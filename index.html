@@ -171,8 +171,19 @@ a { color: var(--brand); }
 }
 .toolbar .wrap {
   max-width: var(--maxw); margin: 0 auto;
-  padding: 12px 20px;
+  padding: 10px 20px;
+  display: block;                 /* stack: search row over filters row */
+}
+/* search box inside the sticky toolbar (compact, full width, always visible) */
+.toolbar .searchbox {
+  box-shadow: none;
+  border-radius: 11px;
+  padding: 2px 8px 2px 14px;
+}
+.toolbar .searchbox input { font-size: 15px; padding: 9px 10px; }
+.filters-row {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  margin-top: 9px;
 }
 .toolbar select {
   font: inherit; font-size: 13.5px; color: var(--ink);
@@ -351,6 +362,12 @@ footer.site-footer b { color: var(--ink-2); }
     <h1>차트용 임상용어를 빠르게 찾으세요</h1>
     <p class="sub">영문 진단명·증상·소견·약어·synonym을 한 번에 검색합니다. 결과 카드에서 차트용 추천명을 바로 복사할 수 있습니다. <b>현재 데이터는 영문 기준</b>이라 영어로 검색하세요.</p>
 
+    <div class="quick" id="quick"></div>
+  </div>
+</section>
+
+<section class="toolbar" id="toolbar">
+  <div class="wrap">
     <div class="searchbox" id="searchbox">
       <span class="ico" aria-hidden="true">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -362,24 +379,19 @@ footer.site-footer b { color: var(--ink-2); }
              placeholder="예: mitral regurgitation, vomiting, MR, renal failure…" aria-label="용어 검색">
       <button class="clear" id="clearBtn" type="button" aria-label="지우기">×</button>
     </div>
-
-    <div class="quick" id="quick"></div>
-  </div>
-</section>
-
-<section class="toolbar" id="toolbar">
-  <div class="wrap">
-    <select id="systemFilter" aria-label="계통 필터"></select>
-    <select id="typeFilter" aria-label="Term type 필터"></select>
-    <select id="warnFilter" aria-label="주의 필터">
-      <option value="">주의 전체</option>
-      <option value="has">주의 있음</option>
-      <option value="none">주의 없음</option>
-    </select>
-    <label class="toggle"><input type="checkbox" id="includeInactive"> SA-PDT 비활성 포함</label>
-    <label class="toggle"><input type="checkbox" id="exactMode"> 정확히 일치 우선</label>
-    <span class="spacer"></span>
-    <span class="count" id="count"></span>
+    <div class="filters-row">
+      <select id="systemFilter" aria-label="계통 필터"></select>
+      <select id="typeFilter" aria-label="Term type 필터"></select>
+      <select id="warnFilter" aria-label="주의 필터">
+        <option value="">주의 전체</option>
+        <option value="has">주의 있음</option>
+        <option value="none">주의 없음</option>
+      </select>
+      <label class="toggle"><input type="checkbox" id="includeInactive"> SA-PDT 비활성 포함</label>
+      <label class="toggle"><input type="checkbox" id="exactMode"> 정확히 일치 우선</label>
+      <span class="spacer"></span>
+      <span class="count" id="count"></span>
+    </div>
   </div>
 </section>
 
