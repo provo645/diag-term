@@ -572,19 +572,13 @@ footer.site-footer b { color: var(--ink-2); }
         + esc(r.evidence_grade) + " · " + esc(r.naming_status || "") + '">근거 '
         + esc(r.evidence_grade) + "</span>"
       : "";
-    if (r.supporting_evidence) {
-      evb += '<span class="badge sup" title="부가근거: ' + esc(r.supporting_evidence) + '">+근거'
-        + (r.supporting_grade ? " " + esc(r.supporting_grade) : "") + "</span>";
-    }
     if (r.is_new_candidate) {
       evb += '<span class="badge newc" title="SA-PDT 미등재, 명명 후보 (근거 기반 신규 후보)">신규후보</span>';
     }
+    // card face: keep it lean — 근거등급 · Term type · 계통 · 주의 · 신규후보.
+    // (부가근거 / 약어 / Chart use 는 아래 '자세히'에만 표시)
     var badges = evb + '<span class="badge type" data-t="' + esc(r.term_type || "분류미정") + '">'
       + esc(r.term_type || "분류미정") + "</span>";
-    if (r.abbr && r.abbr.length) {
-      for (var a = 0; a < r.abbr.length; a++) badges += '<span class="badge abbr">' + esc(r.abbr[a]) + "</span>";
-    }
-    if (r.chart_use) badges += '<span class="badge use">' + esc(r.chart_use) + "</span>";
     if (r.system) badges += '<span class="badge sys">' + esc(r.system) + "</span>";
     if (r.warning) badges += '<span class="badge warn ' + warnClass(r.warning) + '">' + esc(r.warning) + "</span>";
 
@@ -598,6 +592,7 @@ footer.site-footer b { color: var(--ink-2); }
             (r.is_new_candidate ? " (신규후보, 근거 " + esc(r.primary_evidence || "-") + ")" : " (SA-PDT 명명)") +
             (r.naming_status ? " · 명명 " + esc(r.naming_status) : "") + "</dd>" : "") +
         (r.supporting_evidence ? "<dt>추가근거</dt><dd>" + esc(r.supporting_evidence) + "</dd>" : "") +
+        (r.chart_use ? "<dt>chart use</dt><dd>" + esc(r.chart_use) + "</dd>" : "") +
         (r.abbr && r.abbr.length ? "<dt>약어/검색어</dt><dd>" + esc(r.abbr.join(", ")) + "</dd>" : "") +
         "<dt>synonym</dt><dd>" + esc(r.aliases && r.aliases.length ? r.aliases.join(", ") : "-") + "</dd>" +
         "<dt>source status</dt><dd>" + esc(r.source_status || "-") +
